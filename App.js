@@ -1,12 +1,88 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TextInput,
+  Pressable,
+} from 'react-native';
 
 export default function App() {
   const [page, setPage] = useState('home');
 
-  if (page === 'expense') return <SimplePage title="지출 입력" setPage={setPage} />;
-  if (page === 'budget') return <SimplePage title="예산 설정" setPage={setPage} />;
-  if (page === 'wish') return <SimplePage title="위시세이브" setPage={setPage} />;
+  const [balance, setBalance] = useState(0);
+  const [budget, setBudget] = useState(0);
+  const [spent, setSpent] = useState(0);
+  const [wish, setWish] = useState(0);
+
+  const [inputValue, setInputValue] = useState('');
+
+  const formatWon = (num) => `₩ ${num.toLocaleString()}`;
+  const overAmount = spent - budget;
+
+  const openPage = (pageName) => {
+    setInputValue('');
+    setPage(pageName);
+  };
+
+  const saveValue = () => {
+    const numberValue = Number(inputValue) || 0;
+
+    if (page === 'balance') setBalance(numberValue);
+    if (page === 'expense') setSpent(numberValue);
+    if (page === 'budget') setBudget(numberValue);
+    if (page === 'wish') setWish(numberValue);
+
+    setInputValue('');
+    setPage('home');
+  };
+
+  if (page !== 'home') {
+    const pageTitle =
+      page === 'balance'
+        ? '잔액 입력'
+        : page === 'expense'
+        ? '지출 입력'
+        : page === 'budget'
+        ? '예산 설정'
+        : '위시세이브';
+
+    const placeholder =
+      page === 'balance'
+        ? '총 잔액 입력'
+        : page === 'expense'
+        ? '이번 달 사용 금액 입력'
+        : page === 'budget'
+        ? '이번 달 예산 입력'
+        : '목표 금액 입력';
+
+    return (
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <Pressable onPress={() => setPage('home')}>
+          <Text style={styles.back}>‹ 뒤로가기</Text>
+        </Pressable>
+
+        <Text style={styles.title}>{pageTitle}</Text>
+
+        <View style={styles.inputCard}>
+          <Text style={styles.inputTitle}>{pageTitle}</Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder={placeholder}
+            keyboardType="numeric"
+            value={inputValue}
+            onChangeText={setInputValue}
+          />
+
+          <Pressable style={styles.saveButton} onPress={saveValue}>
+            <Text style={styles.saveButtonText}>저장하기</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -14,62 +90,68 @@ export default function App() {
 
       <View style={styles.card}>
         <Text style={styles.label}>총 잔액</Text>
-        <Text style={styles.bigMoney}>₩ 0</Text>
+        <Text style={styles.bigMoney}>{formatWon(balance)}</Text>
 
         <View style={styles.line} />
 
         <Text style={styles.label}>이번 달 사용 금액</Text>
-        <Text style={styles.mediumMoney}>₩ 0</Text>
+        <Text style={styles.mediumMoney}>{formatWon(spent)}</Text>
       </View>
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>이번 달 예산</Text>
-        <Text style={styles.subText}>₩ 0 중</Text>
-        <Text style={styles.mediumMoney}>₩ 0 사용</Text>
+        <Text style={styles.subText}>{formatWon(budget)} 중</Text>
+        <Text style={styles.mediumMoney}>{formatWon(spent)} 사용</Text>
       </View>
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>예산 초과 알림</Text>
-        <Text style={styles.alertMain}>아직 예산 초과 내역이 없어요</Text>
-        <Text style={styles.alertSub}>지출과 예산을 설정하면 알림이 표시돼요.</Text>
+
+        {budget > 0 && spent > budget ? (
+          <>
+            <Text style={styles.alertMain}>지출이 예산을 초과했어요</Text>
+            <Text style={styles.alertSub}>
+              예산보다 {formatWon(overAmount)} 더 사용했어요.
+            </Text>
+          </>
+        ) : (
+          <>
+            <Text style={styles.alertMain}>아직 예산 초과 내역이 없어요</Text>
+            <Text style={styles.alertSub}>
+              지출과 예산을 설정하면 알림이 표시돼요.
+            </Text>
+          </>
+        )}
       </View>
 
       <Text style={styles.sectionTitle}>바로가기</Text>
 
-      <TouchableOpacity style={styles.menuCard} onPress={() => setPage('expense')}>
-        <Text style={styles.menuTitle}>지출 입력</Text>
-        <Text style={styles.menuSub}>오늘 사용한 금액을 입력해요</Text>
-      </TouchableOpacity>
+      <Pressable style={styles.menuCard} onPress={() => openPage('balance')}>
+        <Text style={styles.menuTitle}>잔액 입력</Text>
+        <Text style={styles.menuSub}>현재 계좌 잔액을 입력해요</Text>
+      </Pressable>
 
-      <TouchableOpacity style={styles.menuCard} onPress={() => setPage('budget')}>
+      <Pressable style={styles.menuCard} onPress={() => openPage('expense')}>
+        <Text style={styles.menuTitle}>지출 입력</Text>
+        <Text style={styles.menuSub}>이번 달 사용 금액을 입력해요</Text>
+      </Pressable>
+
+      <Pressable style={styles.menuCard} onPress={() => openPage('budget')}>
         <Text style={styles.menuTitle}>예산 설정</Text>
         <Text style={styles.menuSub}>이번 달 예산을 설정해요</Text>
-      </TouchableOpacity>
+      </Pressable>
 
-      <TouchableOpacity style={styles.menuCard} onPress={() => setPage('wish')}>
+      <Pressable style={styles.menuCard} onPress={() => openPage('wish')}>
         <Text style={styles.menuTitle}>위시세이브</Text>
-        <Text style={styles.menuSub}>사고 싶은 물건의 저축 계획을 세워요</Text>
-      </TouchableOpacity>
-    </ScrollView>
-  );
-}
+        <Text style={styles.menuSub}>사고 싶은 물건의 목표 금액을 입력해요</Text>
+      </Pressable>
 
-function SimplePage({ title, setPage }) {
-  return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <TouchableOpacity onPress={() => setPage('home')}>
-        <Text style={styles.back}>‹ 뒤로가기</Text>
-      </TouchableOpacity>
-
-      <Text style={styles.title}>{title}</Text>
-
-      <View style={styles.inputCard}>
-        <Text style={styles.inputTitle}>{title}</Text>
-        <TextInput style={styles.input} placeholder="금액을 입력하세요" keyboardType="numeric" />
-        <TouchableOpacity style={styles.button}>
-          <Text style={styles.buttonText}>저장하기</Text>
-        </TouchableOpacity>
-      </View>
+      {wish > 0 && (
+        <View style={styles.wishCard}>
+          <Text style={styles.wishTitle}>위시세이브 목표</Text>
+          <Text style={styles.wishMoney}>{formatWon(wish)}</Text>
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -140,6 +222,7 @@ const styles = StyleSheet.create({
   alertSub: {
     fontSize: 16,
     color: '#666',
+    lineHeight: 22,
   },
 
   sectionTitle: {
@@ -169,6 +252,24 @@ const styles = StyleSheet.create({
     color: '#666',
   },
 
+  wishCard: {
+    backgroundColor: '#EEF2FF',
+    borderRadius: 22,
+    padding: 24,
+    marginTop: 10,
+  },
+
+  wishTitle: {
+    fontSize: 19,
+    fontWeight: '900',
+    marginBottom: 12,
+  },
+
+  wishMoney: {
+    fontSize: 26,
+    fontWeight: '900',
+  },
+
   back: {
     fontSize: 18,
     color: '#1F4F91',
@@ -196,16 +297,17 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
 
-  button: {
+  saveButton: {
     backgroundColor: '#5B7BEF',
     paddingVertical: 16,
     borderRadius: 16,
     alignItems: 'center',
+    marginTop: 10,
   },
 
-  buttonText: {
+  saveButtonText: {
     color: 'white',
     fontSize: 17,
-    fontWeight: '800',
+    fontWeight: '900',
   },
 });
