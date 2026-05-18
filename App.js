@@ -46,14 +46,7 @@ function getCategorySpent(transactions, category) {
     .reduce((sum, item) => sum + item.amount, 0);
 }
 
-function HomeScreen({
-  navigation,
-  balance,
-  budgets,
-  spent,
-  wish,
-  transactions,
-}) {
+function HomeScreen({ navigation, balance, budgets, spent, wish, transactions }) {
   const totalBudget = Object.values(budgets).reduce((sum, value) => sum + value, 0);
   const usageRate = totalBudget > 0 ? Math.min((spent / totalBudget) * 100, 100) : 0;
 
@@ -86,7 +79,13 @@ function HomeScreen({
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>내 계좌</Text>
+      <View style={styles.homeHeader}>
+        <Text style={styles.title}>내 계좌</Text>
+
+        <Pressable onPress={() => navigation.navigate('Settings')}>
+          <Text style={styles.settingIcon}>⚙️</Text>
+        </Pressable>
+      </View>
 
       <View style={styles.card}>
         <Text style={styles.label}>총 잔액</Text>
@@ -160,10 +159,10 @@ function HomeScreen({
   );
 }
 
-function TransactionInputScreen({ navigation, addTransaction, transactions }) {
+function TransactionInputScreen({ navigation, addTransaction, transactions, categories }) {
   const [type, setType] = useState('expense');
   const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState(categories[0] || '');
 
   const recentTransactions = transactions.slice(0, 5);
 
@@ -189,18 +188,17 @@ function TransactionInputScreen({ navigation, addTransaction, transactions }) {
 
   const saveTransaction = () => {
     const numberAmount = Number(amount) || 0;
-    if (numberAmount <= 0) return;
+    if (numberAmount <= 0 || !selectedCategory) return;
 
     addTransaction({
       id: Date.now().toString(),
       type,
       amount: numberAmount,
-      category: category || (type === 'income' ? '수입' : '기타'),
+      category: selectedCategory,
       date: new Date().toISOString().slice(0, 10),
     });
 
     setAmount('');
-    setCategory('');
   };
 
   return (
@@ -236,12 +234,33 @@ function TransactionInputScreen({ navigation, addTransaction, transactions }) {
           onChangeText={setAmount}
         />
 
-        <TextInput
-          style={styles.input}
-          placeholder="카테고리 입력 예: 식비, 교통, 용돈"
-          value={category}
-          onChangeText={setCategory}
-        />
+        <Text style={styles.inputLabel}>카테고리 선택</Text>
+
+        <View style={styles.categorySelectWrap}>
+          {categories.length === 0 ? (
+            <Text style={styles.emptyText}>설정에서 카테고리를 추가해 주세요.</Text>
+          ) : (
+            categories.map((category) => (
+              <Pressable
+                key={category}
+                style={[
+                  styles.categoryChip,
+                  selectedCategory === category && styles.selectedCategoryChip,
+                ]}
+                onPress={() => setSelectedCategory(category)}
+              >
+                <Text
+                  style={[
+                    styles.categoryChipText,
+                    selectedCategory === category && styles.selectedCategoryChipText,
+                  ]}
+                >
+                  {category}
+                </Text>
+              </Pressable>
+            ))
+          )}
+        </View>
 
         <Pressable style={styles.saveButton} onPress={saveTransaction}>
           <Text style={styles.saveButtonText}>저장하기</Text>
@@ -294,11 +313,9 @@ function TransactionInputScreen({ navigation, addTransaction, transactions }) {
   );
 }
 
-function BudgetScreen({ budgets, setBudgets, transactions }) {
+function BudgetScreen({ budgets, setBudgets, transactions, categories }) {
   const [editingCategory, setEditingCategory] = useState(null);
   const [inputValue, setInputValue] = useState('');
-
-  const categories = Object.keys(budgets);
 
   const totalBudget = Object.values(budgets).reduce((sum, value) => sum + value, 0);
   const totalSpent = transactions
@@ -309,7 +326,7 @@ function BudgetScreen({ budgets, setBudgets, transactions }) {
 
   const startEdit = (category) => {
     setEditingCategory(category);
-    setInputValue(String(budgets[category]));
+    setInputValue(String(budgets[category] || 0));
   };
 
   const saveBudget = (category) => {
@@ -343,67 +360,122 @@ function BudgetScreen({ budgets, setBudgets, transactions }) {
       <Text style={styles.sectionTitle}>카테고리별 예산</Text>
 
       <View style={styles.historyCard}>
-        {categories.map((category) => {
-          const categoryBudget = budgets[category];
-          const categorySpent = getCategorySpent(transactions, category);
-          const categoryRate =
-            categoryBudget > 0
-              ? Math.min((categorySpent / categoryBudget) * 100, 100)
-              : 0;
+        {categories.length === 0 ? (
+          <Text style={styles.emptyText}>설정에서 카테고리를 추가해 주세요.</Text>
+        ) : (
+          categories.map((category) => {
+            const categoryBudget = budgets[category] || 0;
+            const categorySpent = getCategorySpent(transactions, category);
+            const categoryRate =
+              categoryBudget > 0 ? Math.min((categorySpent / categoryBudget) * 100, 100) : 0;
 
-          return (
-            <View key={category} style={styles.budgetBlock}>
-              <View style={styles.budgetTopRow}>
-                <View>
-                  <Text style={styles.transactionTitle}>{category}</Text>
+            return (
+              <View key={category} style={styles.budgetBlock}>
+                <View style={styles.budgetTopRow}>
+                  <View>
+                    <Text style={styles.transactionTitle}>{category}</Text>
+
+                    {editingCategory === category ? (
+                      <TextInput
+                        style={styles.budgetInput}
+                        keyboardType="numeric"
+                        value={inputValue}
+                        onChangeText={setInputValue}
+                        placeholder="예산 입력"
+                      />
+                    ) : (
+                      <Text style={styles.transactionDate}>
+                        {formatWon(categoryBudget)} 중 {formatWon(categorySpent)} 사용
+                      </Text>
+                    )}
+                  </View>
 
                   {editingCategory === category ? (
-                    <TextInput
-                      style={styles.budgetInput}
-                      keyboardType="numeric"
-                      value={inputValue}
-                      onChangeText={setInputValue}
-                      placeholder="예산 입력"
-                    />
+                    <Pressable
+                      style={styles.changeButton}
+                      onPress={() => saveBudget(category)}
+                    >
+                      <Text style={styles.changeButtonText}>저장</Text>
+                    </Pressable>
                   ) : (
-                    <Text style={styles.transactionDate}>
-                      {formatWon(categoryBudget)} 중 {formatWon(categorySpent)} 사용
-                    </Text>
+                    <Pressable
+                      style={styles.changeButton}
+                      onPress={() => startEdit(category)}
+                    >
+                      <Text style={styles.changeButtonText}>변경</Text>
+                    </Pressable>
                   )}
                 </View>
 
-                {editingCategory === category ? (
-                  <Pressable
-                    style={styles.changeButton}
-                    onPress={() => saveBudget(category)}
-                  >
-                    <Text style={styles.changeButtonText}>저장</Text>
-                  </Pressable>
-                ) : (
-                  <Pressable
-                    style={styles.changeButton}
-                    onPress={() => startEdit(category)}
-                  >
-                    <Text style={styles.changeButtonText}>변경</Text>
-                  </Pressable>
-                )}
-              </View>
+                <View style={styles.categoryProgressBackground}>
+                  <View
+                    style={[
+                      styles.categoryProgressFill,
+                      { width: `${categoryRate}%` },
+                    ]}
+                  />
+                </View>
 
-              <View style={styles.categoryProgressBackground}>
-                <View
-                  style={[
-                    styles.categoryProgressFill,
-                    { width: `${categoryRate}%` },
-                  ]}
-                />
+                <Text style={styles.progressText}>사용률 {categoryRate.toFixed(0)}%</Text>
               </View>
+            );
+          })
+        )}
+      </View>
+    </ScrollView>
+  );
+}
 
-              <Text style={styles.progressText}>
-                사용률 {categoryRate.toFixed(0)}%
-              </Text>
+function SettingsScreen({ categories, addCategory, removeCategory }) {
+  const [newCategory, setNewCategory] = useState('');
+
+  const saveCategory = () => {
+    const trimmed = newCategory.trim();
+
+    if (!trimmed) return;
+
+    addCategory(trimmed);
+    setNewCategory('');
+  };
+
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <Text style={styles.title}>설정</Text>
+
+      <View style={styles.inputCard}>
+        <Text style={styles.cardTitle}>카테고리 추가</Text>
+
+        <TextInput
+          style={styles.input}
+          placeholder="새 카테고리 입력"
+          value={newCategory}
+          onChangeText={setNewCategory}
+        />
+
+        <Pressable style={styles.saveButton} onPress={saveCategory}>
+          <Text style={styles.saveButtonText}>카테고리 추가하기</Text>
+        </Pressable>
+      </View>
+
+      <Text style={styles.sectionTitle}>카테고리 관리</Text>
+
+      <View style={styles.historyCard}>
+        {categories.length === 0 ? (
+          <Text style={styles.emptyText}>등록된 카테고리가 없어요.</Text>
+        ) : (
+          categories.map((category) => (
+            <View key={category} style={styles.settingCategoryRow}>
+              <Text style={styles.transactionTitle}>{category}</Text>
+
+              <Pressable
+                style={styles.deleteButton}
+                onPress={() => removeCategory(category)}
+              >
+                <Text style={styles.deleteButtonText}>삭제</Text>
+              </Pressable>
             </View>
-          );
-        })}
+          ))
+        )}
       </View>
     </ScrollView>
   );
@@ -506,6 +578,8 @@ function HistoryScreen({ transactions }) {
 export default function App() {
   const [balance, setBalance] = useState(0);
 
+  const [categories, setCategories] = useState(['식비', '교통', '카페', '쇼핑']);
+
   const [budgets, setBudgets] = useState({
     식비: 0,
     교통: 0,
@@ -516,6 +590,27 @@ export default function App() {
   const [spent, setSpent] = useState(0);
   const [wish, setWish] = useState(0);
   const [transactions, setTransactions] = useState([]);
+
+  const addCategory = (category) => {
+    if (categories.includes(category)) return;
+
+    setCategories((prev) => [...prev, category]);
+
+    setBudgets((prev) => ({
+      ...prev,
+      [category]: 0,
+    }));
+  };
+
+  const removeCategory = (category) => {
+    setCategories((prev) => prev.filter((item) => item !== category));
+
+    setBudgets((prev) => {
+      const copied = { ...prev };
+      delete copied[category];
+      return copied;
+    });
+  };
 
   const addTransaction = (transaction) => {
     setTransactions((prev) => [transaction, ...prev]);
@@ -550,6 +645,7 @@ export default function App() {
               {...props}
               addTransaction={addTransaction}
               transactions={transactions}
+              categories={categories}
             />
           )}
         </Stack.Screen>
@@ -561,6 +657,18 @@ export default function App() {
               budgets={budgets}
               setBudgets={setBudgets}
               transactions={transactions}
+              categories={categories}
+            />
+          )}
+        </Stack.Screen>
+
+        <Stack.Screen name="Settings" options={{ title: '설정' }}>
+          {(props) => (
+            <SettingsScreen
+              {...props}
+              categories={categories}
+              addCategory={addCategory}
+              removeCategory={removeCategory}
             />
           )}
         </Stack.Screen>
@@ -592,6 +700,7 @@ export default function App() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8F9FD', paddingHorizontal: 24 },
   content: { paddingTop: 70, paddingBottom: 40 },
+
   inputContainer: {
     flex: 1,
     backgroundColor: '#F8F9FD',
@@ -599,15 +708,19 @@ const styles = StyleSheet.create({
     paddingTop: 50,
   },
 
-  title: { fontSize: 30, fontWeight: '900', marginBottom: 36 },
-
-  card: {
-    backgroundColor: '#EEF2FF',
-    borderRadius: 22,
-    padding: 28,
-    marginBottom: 24,
+  homeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
 
+  settingIcon: {
+    fontSize: 28,
+    marginBottom: 36,
+  },
+
+  title: { fontSize: 30, fontWeight: '900', marginBottom: 36 },
+  card: { backgroundColor: '#EEF2FF', borderRadius: 22, padding: 28, marginBottom: 24 },
   label: { fontSize: 18, marginBottom: 22 },
   bigMoney: { fontSize: 42, fontWeight: '900', marginBottom: 36 },
   line: { height: 1, backgroundColor: '#DDE3F3', marginVertical: 22 },
@@ -625,29 +738,10 @@ const styles = StyleSheet.create({
     borderColor: '#E5E8F2',
   },
 
-  alertTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-
-  smallAlertTitle: {
-    fontSize: 18,
-    fontWeight: '900',
-    flex: 1,
-  },
-
-  smallAlertText: {
-    color: '#666',
-    marginTop: 8,
-    marginBottom: 14,
-  },
-
-  detailLink: {
-    color: '#1F4F91',
-    fontWeight: '900',
-    fontSize: 14,
-  },
+  alertTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  smallAlertTitle: { fontSize: 18, fontWeight: '900', flex: 1 },
+  smallAlertText: { color: '#666', marginTop: 8, marginBottom: 14 },
+  detailLink: { color: '#1F4F91', fontWeight: '900', fontSize: 14 },
 
   smallProgressBackground: {
     height: 8,
@@ -656,10 +750,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 
-  smallProgressFill: {
-    height: '100%',
-    borderRadius: 999,
-  },
+  smallProgressFill: { height: '100%', borderRadius: 999 },
 
   progressBackground: {
     height: 14,
@@ -689,12 +780,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
 
-  progressText: {
-    color: '#666',
-    fontWeight: '800',
-    marginTop: 8,
-    fontSize: 13,
-  },
+  progressText: { color: '#666', fontWeight: '800', marginTop: 8, fontSize: 13 },
 
   detailCard: {
     backgroundColor: '#FFFFFF',
@@ -719,13 +805,7 @@ const styles = StyleSheet.create({
   menuTitle: { fontSize: 20, fontWeight: '900', marginBottom: 8 },
   menuSub: { fontSize: 15, color: '#666' },
 
-  wishCard: {
-    backgroundColor: '#EEF2FF',
-    borderRadius: 22,
-    padding: 24,
-    marginTop: 10,
-  },
-
+  wishCard: { backgroundColor: '#EEF2FF', borderRadius: 22, padding: 24, marginTop: 10 },
   wishTitle: { fontSize: 19, fontWeight: '900', marginBottom: 12 },
   wishMoney: { fontSize: 26, fontWeight: '900' },
 
@@ -734,6 +814,12 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     padding: 24,
     marginBottom: 28,
+  },
+
+  inputLabel: {
+    fontSize: 16,
+    fontWeight: '900',
+    marginBottom: 12,
   },
 
   typeRow: { flexDirection: 'row', marginBottom: 20 },
@@ -759,6 +845,34 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
 
+  categorySelectWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 24,
+  },
+
+  categoryChip: {
+    backgroundColor: '#EEF2FF',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 18,
+    marginRight: 8,
+    marginBottom: 8,
+  },
+
+  selectedCategoryChip: {
+    backgroundColor: '#5B7BEF',
+  },
+
+  categoryChipText: {
+    fontWeight: '900',
+    color: '#1F4F91',
+  },
+
+  selectedCategoryChipText: {
+    color: '#FFFFFF',
+  },
+
   saveButton: {
     backgroundColor: '#5B7BEF',
     paddingVertical: 16,
@@ -766,11 +880,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  saveButtonText: {
-    color: 'white',
-    fontSize: 17,
-    fontWeight: '900',
-  },
+  saveButtonText: { color: 'white', fontSize: 17, fontWeight: '900' },
 
   historyCard: {
     backgroundColor: '#FFFFFF',
@@ -805,17 +915,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  subButtonText: {
-    color: '#1F4F91',
-    fontWeight: '900',
-    fontSize: 16,
-  },
+  subButtonText: { color: '#1F4F91', fontWeight: '900', fontSize: 16 },
 
-  filterRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 18,
-  },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 18 },
 
   filterChip: {
     backgroundColor: '#EEF2FF',
@@ -857,8 +959,26 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
 
-  changeButtonText: {
-    color: 'white',
+  changeButtonText: { color: 'white', fontWeight: '900' },
+
+  settingCategoryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEF0F5',
+    paddingVertical: 14,
+  },
+
+  deleteButton: {
+    backgroundColor: '#FFE1E1',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+
+  deleteButtonText: {
+    color: '#D13B3B',
     fontWeight: '900',
   },
 });
