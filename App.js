@@ -111,6 +111,26 @@ export default function App() {
     }
   };
 
+  const deleteTransaction = (id) => {
+  const target = transactions.find(
+    (item) => item.id === id
+  );
+
+  if (!target) return;
+
+  setTransactions((prev) =>
+    prev.filter((item) => item.id !== id)
+  );
+
+  if (target.type === 'income') {
+    setBalance((prev) => prev - target.amount);
+  } else {
+    setSpent((prev) => prev - target.amount);
+    setBalance((prev) => prev + target.amount);
+  }
+};
+
+
   return (
     <NavigationContainer>
       <Stack.Navigator>
@@ -136,6 +156,7 @@ export default function App() {
               transactions={transactions}
               categories={categories}
               styles={styles}
+              deleteTransaction={deleteTransaction}
             />
           )}
         </Stack.Screen>
@@ -186,6 +207,7 @@ export default function App() {
           {...props} 
           transactions={transactions}
           styles={styles} 
+          deleteTransaction={deleteTransaction}
           />}
         </Stack.Screen>
       </Stack.Navigator>
@@ -477,4 +499,58 @@ const styles = StyleSheet.create({
     color: '#D13B3B',
     fontWeight: '900',
   },
+
+  transactionLeft: {
+  flexDirection: 'row',
+  alignItems: 'center',
+},
+
+transactionRight: {
+  flexDirection: 'row',
+  alignItems: 'center',
+},
+
+moreButton: {
+  fontSize: 24,
+  marginLeft: 12,
+  color: '#777',
+  fontWeight: '900',
+},
+
+deleteMenu: {
+  position: 'absolute',
+  top: 32,
+  right: 0,
+  backgroundColor: '#FFFFFF',
+  paddingHorizontal: 16,
+  paddingVertical: 10,
+  borderRadius: 12,
+  borderWidth: 1,
+  borderColor: '#E5E8F2',
+
+  minWidth: 70,
+
+  justifyContent: 'center',
+  alignItems: 'center',
+
+  zIndex: 999,
+
+  shadowColor: '#000',
+  shadowOpacity: 0.08,
+  shadowRadius: 8,
+  shadowOffset: {
+    width: 0,
+    height: 2,
+  },
+
+  elevation: 3,
+},
+
+
+deleteMenuText: {
+  color: '#D13B3B',
+  fontWeight: '900',
+  fontsize: 14,
+},
+
 });

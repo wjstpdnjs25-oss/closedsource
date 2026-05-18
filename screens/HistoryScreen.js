@@ -11,6 +11,7 @@ import TransactionItem from '../components/TransactionItem';
 function HistoryScreen({
   transactions,
   styles,
+  deleteTransaction,
 }) {
   const [filter, setFilter] = useState('all');
 
@@ -102,6 +103,9 @@ function HistoryScreen({
               key={item.id}
               item={item}
               styles={styles}
+              onDelete={() =>
+                deleteTransaction(item.id)
+              }
             />
           ))
         )}

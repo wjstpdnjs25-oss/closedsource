@@ -16,6 +16,7 @@ function formatWon(num) {
 function TransactionInputScreen({
   navigation,
   addTransaction,
+  deleteTransaction,
   transactions,
   categories,
   styles,
@@ -221,6 +222,9 @@ function TransactionInputScreen({
               key={item.id}
               item={item}
               styles={styles}
+              onDelete={() =>
+                deleteTransaction(item.id)
+            }
             />
           ))
         )}
