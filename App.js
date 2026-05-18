@@ -40,11 +40,80 @@ function TransactionItem({ item }) {
   );
 }
 
-function HomeScreen({ navigation, balance, budget, spent, wish }) {
-  const overAmount = spent - budget;
+function HomeScreen({
+  navigation,
+  balance,
+  budget,
+  spent,
+  wish,
+  transactions,
+}) {
+  const budgetUsageRate =
+    budget > 0 ? Math.min((spent / budget) * 100, 100) : 0;
+
+  let alertTitle = '예산을 설정해 주세요';
+  let alertMessage = '예산을 설정하면 소비 알림을 받을 수 있어요.';
+  let alertColor = '#5B7BEF';
+  let alertEmoji = '📌';
+
+  if (budget > 0 && budgetUsageRate < 70) {
+    alertTitle = '안정적으로 예산을 사용 중이에요';
+    alertMessage = `현재 예산 사용률 ${budgetUsageRate.toFixed(0)}%`;
+    alertColor = '#3FA56A';
+    alertEmoji = '✅';
+  }
+
+  if (budgetUsageRate >= 70 && budgetUsageRate < 90) {
+    alertTitle = '예산 사용량이 증가하고 있어요';
+    alertMessage = `예산의 ${budgetUsageRate.toFixed(0)}%를 사용했어요`;
+    alertColor = '#E6A700';
+    alertEmoji = '⚠️';
+  }
+
+  if (budgetUsageRate >= 90 && budgetUsageRate < 100) {
+    alertTitle = '예산이 거의 소진됐어요';
+    alertMessage = `예산 초과까지 ${formatWon(budget - spent)} 남았어요`;
+    alertColor = '#F57C00';
+    alertEmoji = '🚨';
+  }
+
+  if (budgetUsageRate >= 100) {
+    alertTitle = '예산을 초과했어요';
+    alertMessage = `${formatWon(spent - budget)} 초과 사용 중`;
+    alertColor = '#D13B3B';
+    alertEmoji = '🚨';
+  }
+
+  // 카테고리별 지출 합산
+  const expenseTransactions = transactions.filter(
+    (item) => item.type === 'expense'
+  );
+
+  const categoryTotals = expenseTransactions.reduce((acc, item) => {
+    if (!acc[item.category]) {
+      acc[item.category] = 0;
+    }
+
+    acc[item.category] += item.amount;
+
+    return acc;
+  }, {});
+
+  let topCategory = null;
+  let topAmount = 0;
+
+  Object.entries(categoryTotals).forEach(([category, amount]) => {
+    if (amount > topAmount) {
+      topCategory = category;
+      topAmount = amount;
+    }
+  });
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+    >
       <Text style={styles.title}>내 계좌</Text>
 
       <View style={styles.card}>
@@ -63,25 +132,48 @@ function HomeScreen({ navigation, balance, budget, spent, wish }) {
         <Text style={styles.mediumMoney}>{formatWon(spent)} 사용</Text>
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>예산 초과 알림</Text>
+      {/* 실시간 예산 알림 */}
+      <View style={[styles.alertCard, { borderLeftColor: alertColor }]}>
+        <Text style={styles.alertBadge}>실시간 예산 알림</Text>
 
-        {budget > 0 && spent > budget ? (
-          <>
-            <Text style={styles.alertMain}>지출이 예산을 초과했어요</Text>
-            <Text style={styles.alertSub}>
-              예산보다 {formatWon(overAmount)} 더 사용했어요.
-            </Text>
-          </>
-        ) : (
-          <>
-            <Text style={styles.alertMain}>아직 예산 초과 내역이 없어요</Text>
-            <Text style={styles.alertSub}>
-              지출과 예산을 설정하면 알림이 표시돼요.
-            </Text>
-          </>
-        )}
+        <Text style={styles.alertTitle}>
+          {alertEmoji} {alertTitle}
+        </Text>
+
+        <Text style={styles.alertDescription}>{alertMessage}</Text>
+
+        {/* 진행률 바 */}
+        <View style={styles.progressBackground}>
+          <View
+            style={[
+              styles.progressFill,
+              {
+                width: `${budgetUsageRate}%`,
+                backgroundColor: alertColor,
+              },
+            ]}
+          />
+        </View>
+
+        <Text style={styles.progressText}>
+          사용률 {budgetUsageRate.toFixed(0)}%
+        </Text>
       </View>
+
+      {/* 카테고리 알림 */}
+      {topCategory && (
+        <View style={styles.categoryAlertCard}>
+          <Text style={styles.alertBadge}>카테고리 소비 분석</Text>
+
+          <Text style={styles.categoryAlertTitle}>
+            ⚠️ {topCategory} 지출이 가장 많아요
+          </Text>
+
+          <Text style={styles.alertDescription}>
+            현재 {formatWon(topAmount)} 사용 중
+          </Text>
+        </View>
+      )}
 
       <Text style={styles.sectionTitle}>바로가기</Text>
 
@@ -90,17 +182,27 @@ function HomeScreen({ navigation, balance, budget, spent, wish }) {
         onPress={() => navigation.navigate('TransactionInput')}
       >
         <Text style={styles.menuTitle}>내역 입력</Text>
-        <Text style={styles.menuSub}>수입과 지출을 입력하고 최근 내역을 확인해요</Text>
+        <Text style={styles.menuSub}>
+          수입과 지출을 입력하고 최근 내역을 확인해요
+        </Text>
       </Pressable>
 
-      <Pressable style={styles.menuCard} onPress={() => navigation.navigate('Budget')}>
+      <Pressable
+        style={styles.menuCard}
+        onPress={() => navigation.navigate('Budget')}
+      >
         <Text style={styles.menuTitle}>예산 설정</Text>
         <Text style={styles.menuSub}>이번 달 예산을 설정해요</Text>
       </Pressable>
 
-      <Pressable style={styles.menuCard} onPress={() => navigation.navigate('Wish')}>
+      <Pressable
+        style={styles.menuCard}
+        onPress={() => navigation.navigate('Wish')}
+      >
         <Text style={styles.menuTitle}>위시세이브</Text>
-        <Text style={styles.menuSub}>사고 싶은 물건의 목표 금액을 입력해요</Text>
+        <Text style={styles.menuSub}>
+          사고 싶은 물건의 목표 금액을 입력해요
+        </Text>
       </Pressable>
 
       {wish > 0 && (
@@ -113,7 +215,11 @@ function HomeScreen({ navigation, balance, budget, spent, wish }) {
   );
 }
 
-function TransactionInputScreen({ navigation, addTransaction, transactions }) {
+function TransactionInputScreen({
+  navigation,
+  addTransaction,
+  transactions,
+}) {
   const [type, setType] = useState('expense');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
@@ -142,13 +248,15 @@ function TransactionInputScreen({ navigation, addTransaction, transactions }) {
 
   const saveTransaction = () => {
     const numberAmount = Number(amount) || 0;
+
     if (numberAmount <= 0) return;
 
     addTransaction({
       id: Date.now().toString(),
       type,
       amount: numberAmount,
-      category: category || (type === 'income' ? '수입' : '기타'),
+      category:
+        category || (type === 'income' ? '수입' : '기타'),
       date: new Date().toISOString().slice(0, 10),
     });
 
@@ -157,25 +265,44 @@ function TransactionInputScreen({ navigation, addTransaction, transactions }) {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+    >
       <Text style={styles.title}>내역 입력</Text>
 
       <View style={styles.inputCard}>
         <View style={styles.typeRow}>
           <Pressable
-            style={[styles.typeButton, type === 'income' && styles.selectedButton]}
+            style={[
+              styles.typeButton,
+              type === 'income' && styles.selectedButton,
+            ]}
             onPress={() => setType('income')}
           >
-            <Text style={[styles.typeText, type === 'income' && styles.selectedText]}>
+            <Text
+              style={[
+                styles.typeText,
+                type === 'income' && styles.selectedText,
+              ]}
+            >
               수입
             </Text>
           </Pressable>
 
           <Pressable
-            style={[styles.typeButton, type === 'expense' && styles.selectedButton]}
+            style={[
+              styles.typeButton,
+              type === 'expense' && styles.selectedButton,
+            ]}
             onPress={() => setType('expense')}
           >
-            <Text style={[styles.typeText, type === 'expense' && styles.selectedText]}>
+            <Text
+              style={[
+                styles.typeText,
+                type === 'expense' && styles.selectedText,
+              ]}
+            >
               지출
             </Text>
           </Pressable>
@@ -196,7 +323,10 @@ function TransactionInputScreen({ navigation, addTransaction, transactions }) {
           onChangeText={setCategory}
         />
 
-        <Pressable style={styles.saveButton} onPress={saveTransaction}>
+        <Pressable
+          style={styles.saveButton}
+          onPress={saveTransaction}
+        >
           <Text style={styles.saveButtonText}>저장하기</Text>
         </Pressable>
       </View>
@@ -205,21 +335,32 @@ function TransactionInputScreen({ navigation, addTransaction, transactions }) {
 
       <View style={styles.historyCard}>
         {categoryList.length === 0 ? (
-          <Text style={styles.emptyText}>아직 입력된 내역이 없어요.</Text>
+          <Text style={styles.emptyText}>
+            아직 입력된 내역이 없어요.
+          </Text>
         ) : (
           categoryList.map((item) => (
-            <View key={`${item.type}-${item.category}`} style={styles.transactionRow}>
+            <View
+              key={`${item.type}-${item.category}`}
+              style={styles.transactionRow}
+            >
               <View>
                 <Text style={styles.transactionTitle}>
-                  {item.type === 'income' ? '수입' : '지출'} · {item.category}
+                  {item.type === 'income' ? '수입' : '지출'} ·{' '}
+                  {item.category}
                 </Text>
-                <Text style={styles.transactionDate}>총 {item.count}건</Text>
+
+                <Text style={styles.transactionDate}>
+                  총 {item.count}건
+                </Text>
               </View>
 
               <Text
                 style={[
                   styles.transactionAmount,
-                  item.type === 'income' ? styles.incomeText : styles.expenseText,
+                  item.type === 'income'
+                    ? styles.incomeText
+                    : styles.expenseText,
                 ]}
               >
                 {item.type === 'income' ? '+' : '-'}
@@ -234,14 +375,23 @@ function TransactionInputScreen({ navigation, addTransaction, transactions }) {
 
       <View style={styles.historyCard}>
         {recentTransactions.length === 0 ? (
-          <Text style={styles.emptyText}>아직 입력된 내역이 없어요.</Text>
+          <Text style={styles.emptyText}>
+            아직 입력된 내역이 없어요.
+          </Text>
         ) : (
-          recentTransactions.map((item) => <TransactionItem key={item.id} item={item} />)
+          recentTransactions.map((item) => (
+            <TransactionItem key={item.id} item={item} />
+          ))
         )}
       </View>
 
-      <Pressable style={styles.subButton} onPress={() => navigation.navigate('History')}>
-        <Text style={styles.subButtonText}>전체 내역 더보기</Text>
+      <Pressable
+        style={styles.subButton}
+        onPress={() => navigation.navigate('History')}
+      >
+        <Text style={styles.subButtonText}>
+          전체 내역 더보기
+        </Text>
       </Pressable>
     </ScrollView>
   );
@@ -308,7 +458,10 @@ function HistoryScreen({ transactions }) {
   });
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+    >
       <Text style={styles.title}>전체 내역</Text>
 
       <View style={styles.filterRow}>
@@ -320,10 +473,18 @@ function HistoryScreen({ transactions }) {
         ].map(([key, label]) => (
           <Pressable
             key={key}
-            style={[styles.filterChip, filter === key && styles.selectedFilterChip]}
+            style={[
+              styles.filterChip,
+              filter === key && styles.selectedFilterChip,
+            ]}
             onPress={() => setFilter(key)}
           >
-            <Text style={[styles.filterText, filter === key && styles.selectedFilterText]}>
+            <Text
+              style={[
+                styles.filterText,
+                filter === key && styles.selectedFilterText,
+              ]}
+            >
               {label}
             </Text>
           </Pressable>
@@ -332,9 +493,13 @@ function HistoryScreen({ transactions }) {
 
       <View style={styles.historyCard}>
         {filteredTransactions.length === 0 ? (
-          <Text style={styles.emptyText}>해당 기간의 내역이 없어요.</Text>
+          <Text style={styles.emptyText}>
+            해당 기간의 내역이 없어요.
+          </Text>
         ) : (
-          filteredTransactions.map((item) => <TransactionItem key={item.id} item={item} />)
+          filteredTransactions.map((item) => (
+            <TransactionItem key={item.id} item={item} />
+          ))
         )}
       </View>
     </ScrollView>
@@ -346,6 +511,7 @@ export default function App() {
   const [budget, setBudget] = useState(0);
   const [spent, setSpent] = useState(0);
   const [wish, setWish] = useState(0);
+
   const [transactions, setTransactions] = useState([]);
 
   const addTransaction = (transaction) => {
@@ -362,7 +528,10 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator>
-        <Stack.Screen name="Home" options={{ headerShown: false }}>
+        <Stack.Screen
+          name="Home"
+          options={{ headerShown: false }}
+        >
           {(props) => (
             <HomeScreen
               {...props}
@@ -370,11 +539,15 @@ export default function App() {
               budget={budget}
               spent={spent}
               wish={wish}
+              transactions={transactions}
             />
           )}
         </Stack.Screen>
 
-        <Stack.Screen name="TransactionInput" options={{ title: '내역 입력' }}>
+        <Stack.Screen
+          name="TransactionInput"
+          options={{ title: '내역 입력' }}
+        >
           {(props) => (
             <TransactionInputScreen
               {...props}
@@ -384,7 +557,10 @@ export default function App() {
           )}
         </Stack.Screen>
 
-        <Stack.Screen name="Budget" options={{ title: '예산 설정' }}>
+        <Stack.Screen
+          name="Budget"
+          options={{ title: '예산 설정' }}
+        >
           {(props) => (
             <SimpleInputScreen
               {...props}
@@ -400,7 +576,10 @@ export default function App() {
           )}
         </Stack.Screen>
 
-        <Stack.Screen name="Wish" options={{ title: '위시세이브' }}>
+        <Stack.Screen
+          name="Wish"
+          options={{ title: '위시세이브' }}
+        >
           {(props) => (
             <SimpleInputScreen
               {...props}
@@ -416,8 +595,16 @@ export default function App() {
           )}
         </Stack.Screen>
 
-        <Stack.Screen name="History" options={{ title: '전체 내역' }}>
-          {(props) => <HistoryScreen {...props} transactions={transactions} />}
+        <Stack.Screen
+          name="History"
+          options={{ title: '전체 내역' }}
+        >
+          {(props) => (
+            <HistoryScreen
+              {...props}
+              transactions={transactions}
+            />
+          )}
         </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>
@@ -489,15 +676,63 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
 
-  alertMain: {
-    fontSize: 18,
-    fontWeight: '800',
+  alertCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    padding: 24,
+    marginBottom: 24,
+    borderLeftWidth: 8,
+  },
+
+  alertBadge: {
+    fontSize: 13,
+    fontWeight: '900',
+    color: '#666',
     marginBottom: 12,
   },
 
-  alertSub: {
+  alertTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    marginBottom: 10,
+  },
+
+  alertDescription: {
     fontSize: 16,
     color: '#666',
+    marginBottom: 16,
+  },
+
+  progressBackground: {
+    height: 12,
+    backgroundColor: '#E6EAF2',
+    borderRadius: 999,
+    overflow: 'hidden',
+    marginBottom: 10,
+  },
+
+  progressFill: {
+    height: '100%',
+    borderRadius: 999,
+  },
+
+  progressText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#555',
+  },
+
+  categoryAlertCard: {
+    backgroundColor: '#FFF4E8',
+    borderRadius: 22,
+    padding: 24,
+    marginBottom: 24,
+  },
+
+  categoryAlertTitle: {
+    fontSize: 20,
+    fontWeight: '900',
+    marginBottom: 10,
   },
 
   sectionTitle: {
