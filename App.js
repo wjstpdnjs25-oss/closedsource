@@ -24,13 +24,16 @@ function TransactionItem({ item }) {
         <Text style={styles.transactionTitle}>
           {item.type === 'income' ? '수입' : '지출'} · {item.category}
         </Text>
+
         <Text style={styles.transactionDate}>{item.date}</Text>
       </View>
 
       <Text
         style={[
           styles.transactionAmount,
-          item.type === 'income' ? styles.incomeText : styles.expenseText,
+          item.type === 'income'
+            ? styles.incomeText
+            : styles.expenseText,
         ]}
       >
         {item.type === 'income' ? '+' : '-'}
@@ -43,20 +46,27 @@ function TransactionItem({ item }) {
 function HomeScreen({
   navigation,
   balance,
-  budget,
+  budgets,
   spent,
   wish,
   transactions,
 }) {
+  const totalBudget = Object.values(budgets).reduce(
+    (sum, value) => sum + value,
+    0
+  );
+
   const budgetUsageRate =
-    budget > 0 ? Math.min((spent / budget) * 100, 100) : 0;
+    totalBudget > 0
+      ? Math.min((spent / totalBudget) * 100, 100)
+      : 0;
 
   let alertTitle = '예산을 설정해 주세요';
   let alertMessage = '예산을 설정하면 소비 알림을 받을 수 있어요.';
   let alertColor = '#5B7BEF';
   let alertEmoji = '📌';
 
-  if (budget > 0 && budgetUsageRate < 70) {
+  if (totalBudget > 0 && budgetUsageRate < 70) {
     alertTitle = '안정적으로 예산을 사용 중이에요';
     alertMessage = `현재 예산 사용률 ${budgetUsageRate.toFixed(0)}%`;
     alertColor = '#3FA56A';
@@ -72,14 +82,18 @@ function HomeScreen({
 
   if (budgetUsageRate >= 90 && budgetUsageRate < 100) {
     alertTitle = '예산이 거의 소진됐어요';
-    alertMessage = `예산 초과까지 ${formatWon(budget - spent)} 남았어요`;
+    alertMessage = `예산 초과까지 ${formatWon(
+      totalBudget - spent
+    )} 남았어요`;
     alertColor = '#F57C00';
     alertEmoji = '🚨';
   }
 
   if (budgetUsageRate >= 100) {
     alertTitle = '예산을 초과했어요';
-    alertMessage = `${formatWon(spent - budget)} 초과 사용 중`;
+    alertMessage = `${formatWon(
+      spent - totalBudget
+    )} 초과 사용 중`;
     alertColor = '#D13B3B';
     alertEmoji = '🚨';
   }
@@ -118,31 +132,63 @@ function HomeScreen({
 
       <View style={styles.card}>
         <Text style={styles.label}>총 잔액</Text>
-        <Text style={styles.bigMoney}>{formatWon(balance)}</Text>
+
+        <Text style={styles.bigMoney}>
+          {formatWon(balance)}
+        </Text>
 
         <View style={styles.line} />
 
         <Text style={styles.label}>이번 달 사용 금액</Text>
-        <Text style={styles.mediumMoney}>{formatWon(spent)}</Text>
+
+        <Text style={styles.mediumMoney}>
+          {formatWon(spent)}
+        </Text>
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>이번 달 예산</Text>
-        <Text style={styles.subText}>{formatWon(budget)} 중</Text>
-        <Text style={styles.mediumMoney}>{formatWon(spent)} 사용</Text>
+        <Text style={styles.cardTitle}>카테고리별 예산</Text>
+
+        {Object.entries(budgets).map(([category, amount]) => (
+          <View key={category} style={styles.budgetSummaryRow}>
+            <Text style={styles.transactionTitle}>
+              {category}
+            </Text>
+
+            <Text style={styles.transactionAmount}>
+              {formatWon(amount)}
+            </Text>
+          </View>
+        ))}
+
+        <View style={styles.line} />
+
+        <Text style={styles.label}>총 예산</Text>
+
+        <Text style={styles.mediumMoney}>
+          {formatWon(totalBudget)}
+        </Text>
       </View>
 
       {/* 실시간 예산 알림 */}
-      <View style={[styles.alertCard, { borderLeftColor: alertColor }]}>
-        <Text style={styles.alertBadge}>실시간 예산 알림</Text>
+      <View
+        style={[
+          styles.alertCard,
+          { borderLeftColor: alertColor },
+        ]}
+      >
+        <Text style={styles.alertBadge}>
+          실시간 예산 알림
+        </Text>
 
         <Text style={styles.alertTitle}>
           {alertEmoji} {alertTitle}
         </Text>
 
-        <Text style={styles.alertDescription}>{alertMessage}</Text>
+        <Text style={styles.alertDescription}>
+          {alertMessage}
+        </Text>
 
-        {/* 진행률 바 */}
         <View style={styles.progressBackground}>
           <View
             style={[
@@ -163,7 +209,9 @@ function HomeScreen({
       {/* 카테고리 알림 */}
       {topCategory && (
         <View style={styles.categoryAlertCard}>
-          <Text style={styles.alertBadge}>카테고리 소비 분석</Text>
+          <Text style={styles.alertBadge}>
+            카테고리 소비 분석
+          </Text>
 
           <Text style={styles.categoryAlertTitle}>
             ⚠️ {topCategory} 지출이 가장 많아요
@@ -179,9 +227,12 @@ function HomeScreen({
 
       <Pressable
         style={styles.menuCard}
-        onPress={() => navigation.navigate('TransactionInput')}
+        onPress={() =>
+          navigation.navigate('TransactionInput')
+        }
       >
         <Text style={styles.menuTitle}>내역 입력</Text>
+
         <Text style={styles.menuSub}>
           수입과 지출을 입력하고 최근 내역을 확인해요
         </Text>
@@ -192,7 +243,10 @@ function HomeScreen({
         onPress={() => navigation.navigate('Budget')}
       >
         <Text style={styles.menuTitle}>예산 설정</Text>
-        <Text style={styles.menuSub}>이번 달 예산을 설정해요</Text>
+
+        <Text style={styles.menuSub}>
+          카테고리별 예산을 설정해요
+        </Text>
       </Pressable>
 
       <Pressable
@@ -200,6 +254,7 @@ function HomeScreen({
         onPress={() => navigation.navigate('Wish')}
       >
         <Text style={styles.menuTitle}>위시세이브</Text>
+
         <Text style={styles.menuSub}>
           사고 싶은 물건의 목표 금액을 입력해요
         </Text>
@@ -207,8 +262,13 @@ function HomeScreen({
 
       {wish > 0 && (
         <View style={styles.wishCard}>
-          <Text style={styles.wishTitle}>위시세이브 목표</Text>
-          <Text style={styles.wishMoney}>{formatWon(wish)}</Text>
+          <Text style={styles.wishTitle}>
+            위시세이브 목표
+          </Text>
+
+          <Text style={styles.wishMoney}>
+            {formatWon(wish)}
+          </Text>
         </View>
       )}
     </ScrollView>
@@ -226,25 +286,31 @@ function TransactionInputScreen({
 
   const recentTransactions = transactions.slice(0, 5);
 
-  const categorySummary = transactions.reduce((acc, item) => {
-    const key = `${item.type}-${item.category}`;
+  const categorySummary = transactions.reduce(
+    (acc, item) => {
+      const key = `${item.type}-${item.category}`;
 
-    if (!acc[key]) {
-      acc[key] = {
-        type: item.type,
-        category: item.category,
-        total: 0,
-        count: 0,
-      };
-    }
+      if (!acc[key]) {
+        acc[key] = {
+          type: item.type,
+          category: item.category,
+          total: 0,
+          count: 0,
+        };
+      }
 
-    acc[key].total += item.amount;
-    acc[key].count += 1;
+      acc[key].total += item.amount;
+      acc[key].count += 1;
 
-    return acc;
-  }, {});
+      return acc;
+    },
+    {}
+  );
 
-  const categoryList = Object.values(categorySummary).slice(0, 5);
+  const categoryList = Object.values(categorySummary).slice(
+    0,
+    5
+  );
 
   const saveTransaction = () => {
     const numberAmount = Number(amount) || 0;
@@ -327,11 +393,15 @@ function TransactionInputScreen({
           style={styles.saveButton}
           onPress={saveTransaction}
         >
-          <Text style={styles.saveButtonText}>저장하기</Text>
+          <Text style={styles.saveButtonText}>
+            저장하기
+          </Text>
         </Pressable>
       </View>
 
-      <Text style={styles.sectionTitle}>최근 카테고리별 요약</Text>
+      <Text style={styles.sectionTitle}>
+        최근 카테고리별 요약
+      </Text>
 
       <View style={styles.historyCard}>
         {categoryList.length === 0 ? (
@@ -346,8 +416,10 @@ function TransactionInputScreen({
             >
               <View>
                 <Text style={styles.transactionTitle}>
-                  {item.type === 'income' ? '수입' : '지출'} ·{' '}
-                  {item.category}
+                  {item.type === 'income'
+                    ? '수입'
+                    : '지출'}{' '}
+                  · {item.category}
                 </Text>
 
                 <Text style={styles.transactionDate}>
@@ -371,7 +443,9 @@ function TransactionInputScreen({
         )}
       </View>
 
-      <Text style={styles.sectionTitle}>최근 입력 내역</Text>
+      <Text style={styles.sectionTitle}>
+        최근 입력 내역
+      </Text>
 
       <View style={styles.historyCard}>
         {recentTransactions.length === 0 ? (
@@ -380,7 +454,10 @@ function TransactionInputScreen({
           </Text>
         ) : (
           recentTransactions.map((item) => (
-            <TransactionItem key={item.id} item={item} />
+            <TransactionItem
+              key={item.id}
+              item={item}
+            />
           ))
         )}
       </View>
@@ -397,8 +474,96 @@ function TransactionInputScreen({
   );
 }
 
-function SimpleInputScreen({ route, navigation }) {
-  const { title, placeholder, onSave } = route.params;
+function BudgetScreen({ budgets, setBudgets }) {
+  const [editingCategory, setEditingCategory] =
+    useState(null);
+
+  const [inputValue, setInputValue] = useState('');
+
+  const categories = Object.keys(budgets);
+
+  const startEdit = (category) => {
+    setEditingCategory(category);
+    setInputValue(String(budgets[category]));
+  };
+
+  const saveBudget = (category) => {
+    const numberValue = Number(inputValue) || 0;
+
+    setBudgets((prev) => ({
+      ...prev,
+      [category]: numberValue,
+    }));
+
+    setEditingCategory(null);
+    setInputValue('');
+  };
+
+  return (
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+    >
+      <Text style={styles.title}>
+        카테고리별 예산 설정
+      </Text>
+
+      <View style={styles.historyCard}>
+        {categories.map((category) => (
+          <View key={category} style={styles.budgetRow}>
+            <View>
+              <Text style={styles.transactionTitle}>
+                {category}
+              </Text>
+
+              {editingCategory === category ? (
+                <TextInput
+                  style={styles.budgetInput}
+                  keyboardType="numeric"
+                  value={inputValue}
+                  onChangeText={setInputValue}
+                  placeholder="예산 입력"
+                />
+              ) : (
+                <Text style={styles.transactionDate}>
+                  {formatWon(budgets[category])}
+                </Text>
+              )}
+            </View>
+
+            {editingCategory === category ? (
+              <Pressable
+                style={styles.changeButton}
+                onPress={() => saveBudget(category)}
+              >
+                <Text style={styles.changeButtonText}>
+                  저장
+                </Text>
+              </Pressable>
+            ) : (
+              <Pressable
+                style={styles.changeButton}
+                onPress={() => startEdit(category)}
+              >
+                <Text style={styles.changeButtonText}>
+                  변경
+                </Text>
+              </Pressable>
+            )}
+          </View>
+        ))}
+      </View>
+    </ScrollView>
+  );
+}
+
+function SimpleInputScreen({
+  route,
+  navigation,
+}) {
+  const { title, placeholder, onSave } =
+    route.params;
+
   const [value, setValue] = useState('');
 
   return (
@@ -421,7 +586,9 @@ function SimpleInputScreen({ route, navigation }) {
             navigation.goBack();
           }}
         >
-          <Text style={styles.saveButtonText}>저장하기</Text>
+          <Text style={styles.saveButtonText}>
+            저장하기
+          </Text>
         </Pressable>
       </View>
     </View>
@@ -430,32 +597,40 @@ function SimpleInputScreen({ route, navigation }) {
 
 function HistoryScreen({ transactions }) {
   const [filter, setFilter] = useState('all');
+
   const today = new Date();
 
-  const filteredTransactions = transactions.filter((item) => {
-    const itemDate = new Date(item.date);
+  const filteredTransactions = transactions.filter(
+    (item) => {
+      const itemDate = new Date(item.date);
 
-    if (filter === '7days') {
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(today.getDate() - 7);
-      return itemDate >= sevenDaysAgo;
+      if (filter === '7days') {
+        const sevenDaysAgo = new Date();
+
+        sevenDaysAgo.setDate(today.getDate() - 7);
+
+        return itemDate >= sevenDaysAgo;
+      }
+
+      if (filter === '30days') {
+        const thirtyDaysAgo = new Date();
+
+        thirtyDaysAgo.setDate(today.getDate() - 30);
+
+        return itemDate >= thirtyDaysAgo;
+      }
+
+      if (filter === 'month') {
+        return (
+          itemDate.getFullYear() ===
+            today.getFullYear() &&
+          itemDate.getMonth() === today.getMonth()
+        );
+      }
+
+      return true;
     }
-
-    if (filter === '30days') {
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(today.getDate() - 30);
-      return itemDate >= thirtyDaysAgo;
-    }
-
-    if (filter === 'month') {
-      return (
-        itemDate.getFullYear() === today.getFullYear() &&
-        itemDate.getMonth() === today.getMonth()
-      );
-    }
-
-    return true;
-  });
+  );
 
   return (
     <ScrollView
@@ -475,14 +650,16 @@ function HistoryScreen({ transactions }) {
             key={key}
             style={[
               styles.filterChip,
-              filter === key && styles.selectedFilterChip,
+              filter === key &&
+                styles.selectedFilterChip,
             ]}
             onPress={() => setFilter(key)}
           >
             <Text
               style={[
                 styles.filterText,
-                filter === key && styles.selectedFilterText,
+                filter === key &&
+                  styles.selectedFilterText,
               ]}
             >
               {label}
@@ -498,7 +675,10 @@ function HistoryScreen({ transactions }) {
           </Text>
         ) : (
           filteredTransactions.map((item) => (
-            <TransactionItem key={item.id} item={item} />
+            <TransactionItem
+              key={item.id}
+              item={item}
+            />
           ))
         )}
       </View>
@@ -508,20 +688,38 @@ function HistoryScreen({ transactions }) {
 
 export default function App() {
   const [balance, setBalance] = useState(0);
-  const [budget, setBudget] = useState(0);
+
+  const [budgets, setBudgets] = useState({
+    식비: 0,
+    교통: 0,
+    카페: 0,
+    쇼핑: 0,
+  });
+
   const [spent, setSpent] = useState(0);
+
   const [wish, setWish] = useState(0);
 
   const [transactions, setTransactions] = useState([]);
 
   const addTransaction = (transaction) => {
-    setTransactions((prev) => [transaction, ...prev]);
+    setTransactions((prev) => [
+      transaction,
+      ...prev,
+    ]);
 
     if (transaction.type === 'income') {
-      setBalance((prev) => prev + transaction.amount);
+      setBalance(
+        (prev) => prev + transaction.amount
+      );
     } else {
-      setSpent((prev) => prev + transaction.amount);
-      setBalance((prev) => prev - transaction.amount);
+      setSpent(
+        (prev) => prev + transaction.amount
+      );
+
+      setBalance(
+        (prev) => prev - transaction.amount
+      );
     }
   };
 
@@ -536,7 +734,7 @@ export default function App() {
             <HomeScreen
               {...props}
               balance={balance}
-              budget={budget}
+              budgets={budgets}
               spent={spent}
               wish={wish}
               transactions={transactions}
@@ -562,16 +760,10 @@ export default function App() {
           options={{ title: '예산 설정' }}
         >
           {(props) => (
-            <SimpleInputScreen
+            <BudgetScreen
               {...props}
-              route={{
-                ...props.route,
-                params: {
-                  title: '예산 설정',
-                  placeholder: '이번 달 예산 입력',
-                  onSave: setBudget,
-                },
-              }}
+              budgets={budgets}
+              setBudgets={setBudgets}
             />
           )}
         </Stack.Screen>
@@ -657,7 +849,7 @@ const styles = StyleSheet.create({
   line: {
     height: 1,
     backgroundColor: '#DDE3F3',
-    marginBottom: 28,
+    marginVertical: 22,
   },
 
   mediumMoney: {
@@ -668,12 +860,18 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 23,
     fontWeight: '900',
-    marginBottom: 28,
+    marginBottom: 20,
   },
 
   subText: {
     fontSize: 19,
     marginBottom: 16,
+  },
+
+  budgetSummaryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 14,
   },
 
   alertCard: {
@@ -921,5 +1119,34 @@ const styles = StyleSheet.create({
 
   selectedFilterText: {
     color: '#FFFFFF',
+  },
+
+  budgetRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEF0F5',
+    paddingVertical: 16,
+  },
+
+  budgetInput: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#DDE3F3',
+    paddingVertical: 6,
+    minWidth: 120,
+    fontSize: 16,
+  },
+
+  changeButton: {
+    backgroundColor: '#5B7BEF',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+
+  changeButtonText: {
+    color: 'white',
+    fontWeight: '900',
   },
 });
