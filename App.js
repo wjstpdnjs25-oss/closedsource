@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import TransactionItem from './components/TransactionItem';
 import {
   View,
   Text,
@@ -17,28 +18,6 @@ function formatWon(num) {
   return `₩ ${num.toLocaleString()}`;
 }
 
-function TransactionItem({ item }) {
-  return (
-    <View style={styles.transactionRow}>
-      <View>
-        <Text style={styles.transactionTitle}>
-          {item.type === 'income' ? '수입' : '지출'} · {item.category}
-        </Text>
-        <Text style={styles.transactionDate}>{item.date}</Text>
-      </View>
-
-      <Text
-        style={[
-          styles.transactionAmount,
-          item.type === 'income' ? styles.incomeText : styles.expenseText,
-        ]}
-      >
-        {item.type === 'income' ? '+' : '-'}
-        {formatWon(item.amount)}
-      </Text>
-    </View>
-  );
-}
 
 function getCategorySpent(transactions, category) {
   return transactions
@@ -302,8 +281,12 @@ function TransactionInputScreen({ navigation, addTransaction, transactions, cate
         {recentTransactions.length === 0 ? (
           <Text style={styles.emptyText}>아직 입력된 내역이 없어요.</Text>
         ) : (
-          recentTransactions.map((item) => <TransactionItem key={item.id} item={item} />)
-        )}
+          recentTransactions.map((item) => (
+            <TransactionItem 
+            key={item.id} 
+            item={item}
+            styles={styles} />)
+        ))}
       </View>
 
       <Pressable style={styles.subButton} onPress={() => navigation.navigate('History')}>
@@ -568,8 +551,12 @@ function HistoryScreen({ transactions }) {
         {filteredTransactions.length === 0 ? (
           <Text style={styles.emptyText}>해당 기간의 내역이 없어요.</Text>
         ) : (
-          filteredTransactions.map((item) => <TransactionItem key={item.id} item={item} />)
-        )}
+          filteredTransactions.map((item) =>( 
+            <TransactionItem 
+            key={item.id} 
+            item={item}
+            styles={styles} />)
+        ))}
       </View>
     </ScrollView>
   );
