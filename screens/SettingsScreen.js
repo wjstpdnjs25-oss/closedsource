@@ -38,15 +38,21 @@ function SettingsScreen({
           </Text>
         </Pressable>
 
-        <Pressable style={styles.settingMenuRow}>
-          <Text style={styles.settingMenuText}>
+        <Pressable
+        style={styles.settingMenuRow}
+        onPress={() =>
+        navigation.navigate('Notification')
+         }
+    >
+        <Text style={styles.settingMenuText}>
             알림 설정
-          </Text>
+        </Text>
 
-          <Text style={styles.settingArrow}>
+        <Text style={styles.settingArrow}>
             ›
-          </Text>
-        </Pressable>
+        </Text>
+    </Pressable>
+
 
         <Pressable style={styles.settingMenuRow}>
           <Text style={styles.settingMenuText}>

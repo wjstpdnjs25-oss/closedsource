@@ -10,6 +10,7 @@ import BudgetScreen from './screens/BudgetScreen';
 import SettingsScreen from './screens/SettingsScreen';
 import CategoryManageScreen from './screens/CategoryManageScreen';
 import HistoryScreen from './screens/HistoryScreen';
+import NotificationScreen from './screens/NotificationScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -160,6 +161,18 @@ export default function App() {
               addCategory={addCategory}
               removeCategory={removeCategory}
               styles={styles}
+            />
+          )}
+        </Stack.Screen>
+
+        <Stack.Screen
+          name="Notification"
+          options={{ title: '알림 설정' }}
+          >
+        {(props) => (
+          <NotificationScreen
+            {...props}
+            styles={styles}
             />
           )}
         </Stack.Screen>
@@ -723,4 +736,51 @@ const styles = StyleSheet.create({
     color: '#D13B3B',
     fontWeight: '900',
   },
+
+  notificationRow: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+
+  paddingHorizontal: 22,
+  paddingVertical: 22,
+
+  borderBottomWidth: 1,
+  borderBottomColor: '#EEF0F5',
+},
+
+notificationText: {
+  fontSize: 17,
+  fontWeight: '800',
+},
+
+toggle: {
+  width: 52,
+  height: 30,
+
+  borderRadius: 999,
+
+  backgroundColor: '#D9DDE8',
+
+  justifyContent: 'center',
+
+  paddingHorizontal: 4,
+},
+
+toggleActive: {
+  backgroundColor: '#5B7BEF',
+},
+
+toggleCircle: {
+  width: 22,
+  height: 22,
+
+  borderRadius: 11,
+
+  backgroundColor: '#FFFFFF',
+},
+
+toggleCircleActive: {
+  alignSelf: 'flex-end',
+},
 });
