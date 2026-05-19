@@ -16,6 +16,7 @@ import SettingsScreen from './screens/SettingsScreen';
 import CategoryManageScreen from './screens/CategoryManageScreen';
 import HistoryScreen from './screens/HistoryScreen';
 import NotificationScreen from './screens/NotificationScreen';
+import ThemeScreen from './screens/ThemeScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -213,6 +214,18 @@ if (percent >= 70) {
             />
           )}
         </Stack.Screen>
+
+        <Stack.Screen
+        name="Theme"
+        options={{ title: '테마 설정' }}
+      >
+        {(props) => (
+          <ThemeScreen
+          {...props}
+          styles={styles}
+          />
+        )}
+</Stack.Screen>
 
         <Stack.Screen name="Wish" options={{ title: '위시세이브' }}>
           {(props) => (
@@ -819,5 +832,43 @@ toggleCircle: {
 
 toggleCircleActive: {
   alignSelf: 'flex-end',
+},
+
+themeCard: {
+  backgroundColor: '#FFFFFF',
+
+  borderRadius: 20,
+
+  paddingHorizontal: 22,
+  paddingVertical: 24,
+
+  marginBottom: 16,
+
+  borderWidth: 1,
+  borderColor: '#E5E8F2',
+
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+},
+
+selectedThemeCard: {
+  borderColor: '#5B7BEF',
+  backgroundColor: '#EEF2FF',
+},
+
+themeTitle: {
+  fontSize: 17,
+  fontWeight: '800',
+},
+
+selectedThemeTitle: {
+  color: '#1F4F91',
+},
+
+themeCheck: {
+  fontSize: 20,
+  color: '#5B7BEF',
+  fontWeight: '900',
 },
 });

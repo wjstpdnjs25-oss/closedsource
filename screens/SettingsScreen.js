@@ -54,7 +54,12 @@ function SettingsScreen({
     </Pressable>
 
 
-        <Pressable style={styles.settingMenuRow}>
+        <Pressable 
+            style={styles.settingMenuRow}
+            onPress={() =>
+                navigation.navigate('Theme')
+            }
+            >
           <Text style={styles.settingMenuText}>
             테마
           </Text>
