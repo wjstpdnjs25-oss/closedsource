@@ -1,86 +1,72 @@
-import React, { useState } from 'react';
+import React from 'react';
+
 import {
   ScrollView,
   Text,
-  View,
-  TextInput,
   Pressable,
+  View,
 } from 'react-native';
 
 function SettingsScreen({
-  categories,
-  addCategory,
-  removeCategory,
+  navigation,
   styles,
 }) {
-  const [newCategory, setNewCategory] = useState('');
-
-  const saveCategory = () => {
-    const trimmed = newCategory.trim();
-
-    if (!trimmed) return;
-
-    addCategory(trimmed);
-    setNewCategory('');
-  };
-
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
     >
-      <Text style={styles.title}>설정</Text>
-
-      <View style={styles.inputCard}>
-        <Text style={styles.cardTitle}>카테고리 추가</Text>
-
-        <TextInput
-          style={styles.input}
-          placeholder="새 카테고리 입력"
-          value={newCategory}
-          onChangeText={setNewCategory}
-        />
-
-        <Pressable
-          style={styles.saveButton}
-          onPress={saveCategory}
-        >
-          <Text style={styles.saveButtonText}>
-            카테고리 추가하기
-          </Text>
-        </Pressable>
-      </View>
-
-      <Text style={styles.sectionTitle}>
-        카테고리 관리
+      <Text style={styles.title}>
+        설정
       </Text>
 
-      <View style={styles.historyCard}>
-        {categories.length === 0 ? (
-          <Text style={styles.emptyText}>
-            등록된 카테고리가 없어요.
+      <View style={styles.settingMenuCard}>
+        <Pressable
+          style={styles.settingMenuRow}
+          onPress={() =>
+            navigation.navigate(
+              'CategoryManage'
+            )
+          }
+        >
+          <Text style={styles.settingMenuText}>
+            카테고리 관리
           </Text>
-        ) : (
-          categories.map((category) => (
-            <View
-              key={category}
-              style={styles.settingCategoryRow}
-            >
-              <Text style={styles.transactionTitle}>
-                {category}
-              </Text>
 
-              <Pressable
-                style={styles.deleteButton}
-                onPress={() => removeCategory(category)}
-              >
-                <Text style={styles.deleteButtonText}>
-                  삭제
-                </Text>
-              </Pressable>
-            </View>
-          ))
-        )}
+          <Text style={styles.settingArrow}>
+            ›
+          </Text>
+        </Pressable>
+
+        <Pressable style={styles.settingMenuRow}>
+          <Text style={styles.settingMenuText}>
+            알림 설정
+          </Text>
+
+          <Text style={styles.settingArrow}>
+            ›
+          </Text>
+        </Pressable>
+
+        <Pressable style={styles.settingMenuRow}>
+          <Text style={styles.settingMenuText}>
+            테마
+          </Text>
+
+          <Text style={styles.settingArrow}>
+            ›
+          </Text>
+        </Pressable>
+
+        <Pressable style={styles.settingMenuRow}>
+          <Text style={styles.settingMenuText}>
+            데이터 관리
+          </Text>
+
+          <Text style={styles.settingArrow}>
+            ›
+          </Text>
+        </Pressable>
       </View>
     </ScrollView>
   );

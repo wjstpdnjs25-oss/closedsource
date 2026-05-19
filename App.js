@@ -5,6 +5,7 @@ import HomeScreen from './screens/HomeScreen';
 import TransactionInputScreen from './screens/TransactionInputScreen';
 import BudgetScreen from './screens/BudgetScreen';
 import HistoryScreen from './screens/HistoryScreen';
+import CategoryManageScreen from './screens/CategoryManageScreen';
 import {
   View,
   Text,
@@ -182,6 +183,21 @@ export default function App() {
               addCategory={addCategory}
               removeCategory={removeCategory}
               styles={styles}
+            />
+          )}
+        </Stack.Screen>
+
+        <Stack.Screen
+          name="CategoryManage"
+          options={{ title: '카테고리 관리' }}
+        >
+          {(props) => (
+          <CategoryManageScreen
+            {...props}
+            categories={categories}
+            addCategory={addCategory}
+            removeCategory={removeCategory}
+            styles={styles}
             />
           )}
         </Stack.Screen>
@@ -551,6 +567,36 @@ deleteMenuText: {
   color: '#D13B3B',
   fontWeight: '900',
   fontsize: 14,
+},
+
+settingMenuCard: {
+  backgroundColor: '#FFFFFF',
+  borderRadius: 22,
+  borderWidth: 1,
+  borderColor: '#E5E8F2',
+  overflow: 'hidden',
+},
+
+settingMenuRow: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+
+  paddingHorizontal: 22,
+  paddingVertical: 22,
+
+  borderBottomWidth: 1,
+  borderBottomColor: '#EEF0F5',
+},
+
+settingMenuText: {
+  fontSize: 17,
+  fontWeight: '800',
+},
+
+settingArrow: {
+  fontSize: 24,
+  color: '#999',
 },
 
 });
