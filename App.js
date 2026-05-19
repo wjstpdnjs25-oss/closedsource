@@ -1,8 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, Pressable } from 'react-native';
 
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
+import {
+  requestNotificationPermission,
+  sendBudgetNotification,
+} from './notificationHelper';
 
 import HomeScreen from './screens/HomeScreen';
 import TransactionInputScreen from './screens/TransactionInputScreen';
@@ -49,6 +54,10 @@ export default function App() {
   const [balance, setBalance] = useState(0);
   const [categories, setCategories] = useState(['식비', '교통', '카페', '쇼핑']);
 
+  useEffect(() => {
+    requestNotificationPermission();
+  }, []);
+
   const [budgets, setBudgets] = useState({
     식비: 0,
     교통: 0,
@@ -89,6 +98,34 @@ export default function App() {
     } else {
       setSpent((prev) => prev + transaction.amount);
       setBalance((prev) => prev - transaction.amount);
+      const categoryBudget =
+  budgets[transaction.category] || 0;
+
+const currentSpent =
+  transactions
+    .filter(
+      (item) =>
+        item.type === 'expense' &&
+        item.category === transaction.category
+    )
+    .reduce(
+      (sum, item) => sum + item.amount,
+      0
+    ) + transaction.amount;
+
+const percent =
+  categoryBudget > 0
+    ? Math.floor(
+        (currentSpent / categoryBudget) * 100
+      )
+    : 0;
+
+if (percent >= 70) {
+  sendBudgetNotification(
+    transaction.category,
+    percent
+  );
+}
     }
   };
 
