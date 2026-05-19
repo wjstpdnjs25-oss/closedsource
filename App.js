@@ -1,36 +1,17 @@
 import { useState } from 'react';
-import TransactionItem from './components/TransactionItem';
-import SettingsScreen from './screens/SettingsScreen';
-import HomeScreen from './screens/HomeScreen';
-import TransactionInputScreen from './screens/TransactionInputScreen';
-import BudgetScreen from './screens/BudgetScreen';
-import HistoryScreen from './screens/HistoryScreen';
-import CategoryManageScreen from './screens/CategoryManageScreen';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  Pressable,
-  ScrollView,
-} from 'react-native';
+import { View, Text, StyleSheet, TextInput, Pressable } from 'react-native';
 
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
+import HomeScreen from './screens/HomeScreen';
+import TransactionInputScreen from './screens/TransactionInputScreen';
+import BudgetScreen from './screens/BudgetScreen';
+import SettingsScreen from './screens/SettingsScreen';
+import CategoryManageScreen from './screens/CategoryManageScreen';
+import HistoryScreen from './screens/HistoryScreen';
+
 const Stack = createNativeStackNavigator();
-
-function formatWon(num) {
-  return `₩ ${num.toLocaleString()}`;
-}
-
-
-function getCategorySpent(transactions, category) {
-  return transactions
-    .filter((item) => item.type === 'expense' && item.category === category)
-    .reduce((sum, item) => sum + item.amount, 0);
-}
-
 
 function SimpleInputScreen({ route, navigation }) {
   const { title, placeholder, onSave } = route.params;
@@ -63,10 +44,8 @@ function SimpleInputScreen({ route, navigation }) {
   );
 }
 
-
 export default function App() {
   const [balance, setBalance] = useState(0);
-
   const [categories, setCategories] = useState(['식비', '교통', '카페', '쇼핑']);
 
   const [budgets, setBudgets] = useState({
@@ -113,24 +92,19 @@ export default function App() {
   };
 
   const deleteTransaction = (id) => {
-  const target = transactions.find(
-    (item) => item.id === id
-  );
+    const target = transactions.find((item) => item.id === id);
 
-  if (!target) return;
+    if (!target) return;
 
-  setTransactions((prev) =>
-    prev.filter((item) => item.id !== id)
-  );
+    setTransactions((prev) => prev.filter((item) => item.id !== id));
 
-  if (target.type === 'income') {
-    setBalance((prev) => prev - target.amount);
-  } else {
-    setSpent((prev) => prev - target.amount);
-    setBalance((prev) => prev + target.amount);
-  }
-};
-
+    if (target.type === 'income') {
+      setBalance((prev) => prev - target.amount);
+    } else {
+      setSpent((prev) => prev - target.amount);
+      setBalance((prev) => prev + target.amount);
+    }
+  };
 
   return (
     <NavigationContainer>
@@ -143,7 +117,6 @@ export default function App() {
               budgets={budgets}
               spent={spent}
               wish={wish}
-              transactions={transactions}
               styles={styles}
             />
           )}
@@ -154,10 +127,10 @@ export default function App() {
             <TransactionInputScreen
               {...props}
               addTransaction={addTransaction}
+              deleteTransaction={deleteTransaction}
               transactions={transactions}
               categories={categories}
               styles={styles}
-              deleteTransaction={deleteTransaction}
             />
           )}
         </Stack.Screen>
@@ -176,28 +149,17 @@ export default function App() {
         </Stack.Screen>
 
         <Stack.Screen name="Settings" options={{ title: '설정' }}>
+          {(props) => <SettingsScreen {...props} styles={styles} />}
+        </Stack.Screen>
+
+        <Stack.Screen name="CategoryManage" options={{ title: '카테고리 관리' }}>
           {(props) => (
-            <SettingsScreen
+            <CategoryManageScreen
               {...props}
               categories={categories}
               addCategory={addCategory}
               removeCategory={removeCategory}
               styles={styles}
-            />
-          )}
-        </Stack.Screen>
-
-        <Stack.Screen
-          name="CategoryManage"
-          options={{ title: '카테고리 관리' }}
-        >
-          {(props) => (
-          <CategoryManageScreen
-            {...props}
-            categories={categories}
-            addCategory={addCategory}
-            removeCategory={removeCategory}
-            styles={styles}
             />
           )}
         </Stack.Screen>
@@ -219,12 +181,14 @@ export default function App() {
         </Stack.Screen>
 
         <Stack.Screen name="History" options={{ title: '전체 내역' }}>
-          {(props) => <HistoryScreen 
-          {...props} 
-          transactions={transactions}
-          styles={styles} 
-          deleteTransaction={deleteTransaction}
-          />}
+          {(props) => (
+            <HistoryScreen
+              {...props}
+              transactions={transactions}
+              deleteTransaction={deleteTransaction}
+              styles={styles}
+            />
+          )}
         </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>
@@ -232,8 +196,16 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8F9FD', paddingHorizontal: 24 },
-  content: { paddingTop: 70, paddingBottom: 40 },
+  container: {
+    flex: 1,
+    backgroundColor: '#F8F9FD',
+    paddingHorizontal: 24,
+  },
+
+  content: {
+    paddingTop: 70,
+    paddingBottom: 40,
+  },
 
   inputContainer: {
     flex: 1,
@@ -248,19 +220,69 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
+  settingButton: {
+    width: 44,
+    height: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 36,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#E5E8F2',
+    backgroundColor: '#FFFFFF',
+  },
+
   settingIcon: {
-    fontSize: 28,
+    fontSize: 50,
+    color: '#444',
+  },
+
+  title: {
+    fontSize: 30,
+    fontWeight: '900',
     marginBottom: 36,
   },
 
-  title: { fontSize: 30, fontWeight: '900', marginBottom: 36 },
-  card: { backgroundColor: '#EEF2FF', borderRadius: 22, padding: 28, marginBottom: 24 },
-  label: { fontSize: 18, marginBottom: 22 },
-  bigMoney: { fontSize: 42, fontWeight: '900', marginBottom: 36 },
-  line: { height: 1, backgroundColor: '#DDE3F3', marginVertical: 22 },
-  mediumMoney: { fontSize: 26, fontWeight: '900' },
-  cardTitle: { fontSize: 23, fontWeight: '900', marginBottom: 20 },
-  subText: { fontSize: 16, color: '#666', marginTop: 8 },
+  card: {
+    backgroundColor: '#EEF2FF',
+    borderRadius: 22,
+    padding: 28,
+    marginBottom: 24,
+  },
+
+  label: {
+    fontSize: 18,
+    marginBottom: 22,
+  },
+
+  bigMoney: {
+    fontSize: 42,
+    fontWeight: '900',
+    marginBottom: 36,
+  },
+
+  line: {
+    height: 1,
+    backgroundColor: '#DDE3F3',
+    marginVertical: 22,
+  },
+
+  mediumMoney: {
+    fontSize: 26,
+    fontWeight: '900',
+  },
+
+  cardTitle: {
+    fontSize: 23,
+    fontWeight: '900',
+    marginBottom: 20,
+  },
+
+  subText: {
+    fontSize: 16,
+    color: '#666',
+    marginTop: 8,
+  },
 
   smallAlertCard: {
     backgroundColor: '#FFFFFF',
@@ -272,10 +294,29 @@ const styles = StyleSheet.create({
     borderColor: '#E5E8F2',
   },
 
-  alertTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  smallAlertTitle: { fontSize: 18, fontWeight: '900', flex: 1 },
-  smallAlertText: { color: '#666', marginTop: 8, marginBottom: 14 },
-  detailLink: { color: '#1F4F91', fontWeight: '900', fontSize: 14 },
+  alertTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
+  smallAlertTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    flex: 1,
+  },
+
+  smallAlertText: {
+    color: '#666',
+    marginTop: 8,
+    marginBottom: 14,
+  },
+
+  detailLink: {
+    color: '#1F4F91',
+    fontWeight: '900',
+    fontSize: 14,
+  },
 
   smallProgressBackground: {
     height: 8,
@@ -284,7 +325,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 
-  smallProgressFill: { height: '100%', borderRadius: 999 },
+  smallProgressFill: {
+    height: '100%',
+    borderRadius: 999,
+  },
 
   progressBackground: {
     height: 14,
@@ -314,7 +358,12 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
 
-  progressText: { color: '#666', fontWeight: '800', marginTop: 8, fontSize: 13 },
+  progressText: {
+    color: '#666',
+    fontWeight: '800',
+    marginTop: 8,
+    fontSize: 13,
+  },
 
   detailCard: {
     backgroundColor: '#FFFFFF',
@@ -325,7 +374,11 @@ const styles = StyleSheet.create({
     borderColor: '#E5E8F2',
   },
 
-  sectionTitle: { fontSize: 23, fontWeight: '900', marginBottom: 16 },
+  sectionTitle: {
+    fontSize: 23,
+    fontWeight: '900',
+    marginBottom: 16,
+  },
 
   menuCard: {
     backgroundColor: '#FFFFFF',
@@ -336,12 +389,34 @@ const styles = StyleSheet.create({
     borderColor: '#E5E8F2',
   },
 
-  menuTitle: { fontSize: 20, fontWeight: '900', marginBottom: 8 },
-  menuSub: { fontSize: 15, color: '#666' },
+  menuTitle: {
+    fontSize: 20,
+    fontWeight: '900',
+    marginBottom: 8,
+  },
 
-  wishCard: { backgroundColor: '#EEF2FF', borderRadius: 22, padding: 24, marginTop: 10 },
-  wishTitle: { fontSize: 19, fontWeight: '900', marginBottom: 12 },
-  wishMoney: { fontSize: 26, fontWeight: '900' },
+  menuSub: {
+    fontSize: 15,
+    color: '#666',
+  },
+
+  wishCard: {
+    backgroundColor: '#EEF2FF',
+    borderRadius: 22,
+    padding: 24,
+    marginTop: 10,
+  },
+
+  wishTitle: {
+    fontSize: 19,
+    fontWeight: '900',
+    marginBottom: 12,
+  },
+
+  wishMoney: {
+    fontSize: 26,
+    fontWeight: '900',
+  },
 
   inputCard: {
     backgroundColor: '#FFFFFF',
@@ -356,7 +431,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
-  typeRow: { flexDirection: 'row', marginBottom: 20 },
+  typeRow: {
+    flexDirection: 'row',
+    marginBottom: 20,
+  },
 
   typeButton: {
     flex: 1,
@@ -367,9 +445,19 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
 
-  selectedButton: { backgroundColor: '#5B7BEF' },
-  typeText: { fontSize: 16, fontWeight: '900', color: '#333' },
-  selectedText: { color: '#FFFFFF' },
+  selectedButton: {
+    backgroundColor: '#5B7BEF',
+  },
+
+  typeText: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#333',
+  },
+
+  selectedText: {
+    color: '#FFFFFF',
+  },
 
   input: {
     borderBottomWidth: 1,
@@ -414,7 +502,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  saveButtonText: { color: 'white', fontSize: 17, fontWeight: '900' },
+  saveButtonText: {
+    color: 'white',
+    fontSize: 17,
+    fontWeight: '900',
+  },
 
   historyCard: {
     backgroundColor: '#FFFFFF',
@@ -425,7 +517,10 @@ const styles = StyleSheet.create({
     borderColor: '#E5E8F2',
   },
 
-  emptyText: { color: '#777', fontSize: 15 },
+  emptyText: {
+    color: '#777',
+    fontSize: 15,
+  },
 
   transactionRow: {
     flexDirection: 'row',
@@ -436,11 +531,76 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
   },
 
-  transactionTitle: { fontSize: 16, fontWeight: '800' },
-  transactionDate: { fontSize: 13, color: '#777', marginTop: 4 },
-  transactionAmount: { fontSize: 16, fontWeight: '900' },
-  incomeText: { color: '#1F7A4D' },
-  expenseText: { color: '#D13B3B' },
+  transactionLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  transactionRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  transactionTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+  },
+
+  transactionDate: {
+    fontSize: 13,
+    color: '#777',
+    marginTop: 4,
+  },
+
+  transactionAmount: {
+    fontSize: 16,
+    fontWeight: '900',
+  },
+
+  incomeText: {
+    color: '#1F7A4D',
+  },
+
+  expenseText: {
+    color: '#D13B3B',
+  },
+
+  moreButton: {
+    fontSize: 24,
+    marginLeft: 12,
+    color: '#777',
+    fontWeight: '900',
+  },
+
+  deleteMenu: {
+    position: 'absolute',
+    top: 32,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E8F2',
+    minWidth: 70,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 999,
+    shadowColor: '#000',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    elevation: 3,
+  },
+
+  deleteMenuText: {
+    color: '#D13B3B',
+    fontWeight: '900',
+    fontSize: 14,
+  },
 
   subButton: {
     backgroundColor: '#EEF2FF',
@@ -449,9 +609,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 
-  subButtonText: { color: '#1F4F91', fontWeight: '900', fontSize: 16 },
+  subButtonText: {
+    color: '#1F4F91',
+    fontWeight: '900',
+    fontSize: 16,
+  },
 
-  filterRow: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 18 },
+  filterRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 18,
+  },
 
   filterChip: {
     backgroundColor: '#EEF2FF',
@@ -462,9 +630,18 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
 
-  selectedFilterChip: { backgroundColor: '#5B7BEF' },
-  filterText: { fontWeight: '800', color: '#1F4F91' },
-  selectedFilterText: { color: '#FFFFFF' },
+  selectedFilterChip: {
+    backgroundColor: '#5B7BEF',
+  },
+
+  filterText: {
+    fontWeight: '800',
+    color: '#1F4F91',
+  },
+
+  selectedFilterText: {
+    color: '#FFFFFF',
+  },
 
   budgetBlock: {
     borderBottomWidth: 1,
@@ -493,7 +670,38 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
 
-  changeButtonText: { color: 'white', fontWeight: '900' },
+  changeButtonText: {
+    color: 'white',
+    fontWeight: '900',
+  },
+
+  settingMenuCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#E5E8F2',
+    overflow: 'hidden',
+  },
+
+  settingMenuRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 22,
+    paddingVertical: 22,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEF0F5',
+  },
+
+  settingMenuText: {
+    fontSize: 17,
+    fontWeight: '800',
+  },
+
+  settingArrow: {
+    fontSize: 24,
+    color: '#999',
+  },
 
   settingCategoryRow: {
     flexDirection: 'row',
@@ -515,88 +723,4 @@ const styles = StyleSheet.create({
     color: '#D13B3B',
     fontWeight: '900',
   },
-
-  transactionLeft: {
-  flexDirection: 'row',
-  alignItems: 'center',
-},
-
-transactionRight: {
-  flexDirection: 'row',
-  alignItems: 'center',
-},
-
-moreButton: {
-  fontSize: 24,
-  marginLeft: 12,
-  color: '#777',
-  fontWeight: '900',
-},
-
-deleteMenu: {
-  position: 'absolute',
-  top: 32,
-  right: 0,
-  backgroundColor: '#FFFFFF',
-  paddingHorizontal: 16,
-  paddingVertical: 10,
-  borderRadius: 12,
-  borderWidth: 1,
-  borderColor: '#E5E8F2',
-
-  minWidth: 70,
-
-  justifyContent: 'center',
-  alignItems: 'center',
-
-  zIndex: 999,
-
-  shadowColor: '#000',
-  shadowOpacity: 0.08,
-  shadowRadius: 8,
-  shadowOffset: {
-    width: 0,
-    height: 2,
-  },
-
-  elevation: 3,
-},
-
-
-deleteMenuText: {
-  color: '#D13B3B',
-  fontWeight: '900',
-  fontsize: 14,
-},
-
-settingMenuCard: {
-  backgroundColor: '#FFFFFF',
-  borderRadius: 22,
-  borderWidth: 1,
-  borderColor: '#E5E8F2',
-  overflow: 'hidden',
-},
-
-settingMenuRow: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-
-  paddingHorizontal: 22,
-  paddingVertical: 22,
-
-  borderBottomWidth: 1,
-  borderBottomColor: '#EEF0F5',
-},
-
-settingMenuText: {
-  fontSize: 17,
-  fontWeight: '800',
-},
-
-settingArrow: {
-  fontSize: 24,
-  color: '#999',
-},
-
 });

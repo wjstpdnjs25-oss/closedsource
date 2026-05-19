@@ -67,7 +67,7 @@ function HomeScreen({
         <Pressable
           onPress={() => navigation.navigate('Settings')}
         >
-          <Text style={styles.settingIcon}>⚙️</Text>
+          <Text style={styles.settingIcon}>⚙︎</Text>
         </Pressable>
       </View>
 
